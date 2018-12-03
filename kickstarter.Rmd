@@ -25,5 +25,5 @@ library(readr)
 ```{r Import data}
 
 data <- read_csv("data.csv")
-View(data)
+summary(data)
 ```

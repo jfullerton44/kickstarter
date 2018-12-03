@@ -402,7 +402,47 @@ $(document).ready(function () {
 ##   usd_pledged_real = col_double(),
 ##   usd_goal_real = col_double()
 ## )</code></pre>
-<pre class="r"><code>View(data)</code></pre>
+<pre class="r"><code>summary(data)</code></pre>
+<pre><code>##        ID                name             category        
+##  Min.   :5.971e+03   Length:378661      Length:378661     
+##  1st Qu.:5.383e+08   Class :character   Class :character  
+##  Median :1.075e+09   Mode  :character   Mode  :character  
+##  Mean   :1.075e+09                                        
+##  3rd Qu.:1.610e+09                                        
+##  Max.   :2.147e+09                                        
+##                                                           
+##  main_category        currency            deadline         
+##  Length:378661      Length:378661      Min.   :2009-05-03  
+##  Class :character   Class :character   1st Qu.:2013-06-08  
+##  Mode  :character   Mode  :character   Median :2015-01-14  
+##                                        Mean   :2014-11-01  
+##                                        3rd Qu.:2016-04-28  
+##                                        Max.   :2018-03-03  
+##                                                            
+##       goal              launched                      pledged        
+##  Min.   :        0   Min.   :1970-01-01 01:00:00   Min.   :       0  
+##  1st Qu.:     2000   1st Qu.:2013-05-07 22:14:27   1st Qu.:      30  
+##  Median :     5200   Median :2014-12-10 03:23:41   Median :     620  
+##  Mean   :    49081   Mean   :2014-09-28 18:06:17   Mean   :    9683  
+##  3rd Qu.:    16000   3rd Qu.:2016-03-24 10:21:09   3rd Qu.:    4076  
+##  Max.   :100000000   Max.   :2018-01-02 15:02:31   Max.   :20338986  
+##                                                                      
+##     state              backers           country         
+##  Length:378661      Min.   :     0.0   Length:378661     
+##  Class :character   1st Qu.:     2.0   Class :character  
+##  Mode  :character   Median :    12.0   Mode  :character  
+##                     Mean   :   105.6                     
+##                     3rd Qu.:    56.0                     
+##                     Max.   :219382.0                     
+##                                                          
+##   usd pledged       usd_pledged_real   usd_goal_real      
+##  Min.   :       0   Min.   :       0   Min.   :        0  
+##  1st Qu.:      17   1st Qu.:      31   1st Qu.:     2000  
+##  Median :     395   Median :     624   Median :     5500  
+##  Mean   :    7037   Mean   :    9059   Mean   :    45454  
+##  3rd Qu.:    3034   3rd Qu.:    4050   3rd Qu.:    15500  
+##  Max.   :20338986   Max.   :20338986   Max.   :166361391  
+##  NA&#39;s   :3797</code></pre>
 
 
 
