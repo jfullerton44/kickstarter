@@ -59,7 +59,7 @@ x_test_label <- data[-ind,9]
 
 
 ```{r}
-
+'
 # Normalize training data
 x_train <- scale(x_train) 
 
@@ -67,7 +67,7 @@ x_train <- scale(x_train)
 col_means_train <- attr(x_train, "scaled:center") 
 col_stddevs_train <- attr(x_train, "scaled:scale")
 x_test <- scale(x_test, center = col_means_train, scale = col_stddevs_train)
-
+'
 ```
 
 Now we define our model (using keras syntax):
@@ -87,8 +87,9 @@ network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr 
 Now we fit the model:
 
 ```{r}
+'
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
 network %>% fit(x_train,x_train_label, epochs = 50, batch_size=5)
-
+'
 ```
