@@ -382,7 +382,15 @@ $(document).ready(function () {
 <pre><code>## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(readr)</code></pre>
+<pre class="r"><code>library(readr)
+library(caret)</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## 
+## Attaching package: &#39;caret&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     lift</code></pre>
+<pre class="r"><code>library(keras)</code></pre>
 <pre class="r"><code>data &lt;- read_csv(&quot;data.csv&quot;)</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
@@ -402,47 +410,87 @@ $(document).ready(function () {
 ##   usd_pledged_real = col_double(),
 ##   usd_goal_real = col_double()
 ## )</code></pre>
-<pre class="r"><code>summary(data)</code></pre>
-<pre><code>##        ID                name             category        
-##  Min.   :5.971e+03   Length:378661      Length:378661     
-##  1st Qu.:5.383e+08   Class :character   Class :character  
-##  Median :1.075e+09   Mode  :character   Mode  :character  
-##  Mean   :1.075e+09                                        
-##  3rd Qu.:1.610e+09                                        
-##  Max.   :2.147e+09                                        
-##                                                           
-##  main_category        currency            deadline         
-##  Length:378661      Length:378661      Min.   :2009-05-03  
-##  Class :character   Class :character   1st Qu.:2013-06-08  
-##  Mode  :character   Mode  :character   Median :2015-01-14  
-##                                        Mean   :2014-11-01  
-##                                        3rd Qu.:2016-04-28  
-##                                        Max.   :2018-03-03  
-##                                                            
-##       goal              launched                      pledged        
-##  Min.   :        0   Min.   :1970-01-01 01:00:00   Min.   :       0  
-##  1st Qu.:     2000   1st Qu.:2013-05-07 22:14:27   1st Qu.:      30  
-##  Median :     5200   Median :2014-12-10 03:23:41   Median :     620  
-##  Mean   :    49081   Mean   :2014-09-28 18:06:17   Mean   :    9683  
-##  3rd Qu.:    16000   3rd Qu.:2016-03-24 10:21:09   3rd Qu.:    4076  
-##  Max.   :100000000   Max.   :2018-01-02 15:02:31   Max.   :20338986  
+<pre class="r"><code>data &lt;- data %&gt;% mutate(state=ifelse(state == &#39;canceled&#39;, &#39;failed&#39;, state))
+data &lt;- data %&gt;% mutate(state=ifelse(state == &#39;live&#39;, &#39;successful&#39;, state))
+data &lt;- data %&gt;% mutate(state=ifelse(state == &#39;suspended&#39;, &#39;failed&#39;, state))
+data &lt;- data %&gt;% filter(state!=&#39;undefined&#39;)
+#NHIS &lt;- NHIS %&gt;% mutate(SEX=ifelse(as.factor(SEX) == 1, &#39;MALE&#39;, &#39;FEMALE&#39;))
+data &lt;- data[2:15]
+data$state &lt;- as.factor(data$state)
+data$category &lt;- as.factor(data$category)
+data$main_category &lt;- as.factor(data$main_category)
+data$currency &lt;- as.factor(data$currency)
+data$country &lt;- as.factor(data$country)
+summary(data)</code></pre>
+<pre><code>##      name                     category           main_category   
+##  Length:375099      Product Design: 22312   Film &amp; Video: 62731  
+##  Class :character   Documentary   : 16138   Music       : 49684  
+##  Mode  :character   Tabletop Games: 14180   Publishing  : 39412  
+##                     Music         : 13494   Games       : 35230  
+##                     Shorts        : 12357   Technology  : 32566  
+##                     Video Games   : 11830   Design      : 30068  
+##                     (Other)       :284788   (Other)     :125408  
+##     currency         deadline               goal         
+##  USD    :292795   Min.   :2009-05-03   Min.   :0.00e+00  
+##  GBP    : 33696   1st Qu.:2013-06-01   1st Qu.:2.00e+03  
+##  EUR    : 17243   Median :2015-01-06   Median :5.50e+03  
+##  CAD    : 14761   Mean   :2014-10-30   Mean   :4.95e+04  
+##  AUD    :  7847   3rd Qu.:2016-05-02   3rd Qu.:1.65e+04  
+##  SEK    :  1758   Max.   :2018-03-03   Max.   :1.00e+08  
+##  (Other):  6999                                          
+##     launched                      pledged                state       
+##  Min.   :1970-01-01 01:00:00   Min.   :       0   failed    :238344  
+##  1st Qu.:2013-05-01 04:56:43   1st Qu.:      31   successful:136755  
+##  Median :2014-12-02 23:36:34   Median :     620                      
+##  Mean   :2014-09-26 12:23:20   Mean   :    9753                      
+##  3rd Qu.:2016-03-30 06:20:10   3rd Qu.:    4080                      
+##  Max.   :2018-01-02 15:02:31   Max.   :20338986                      
 ##                                                                      
-##     state              backers           country         
-##  Length:378661      Min.   :     0.0   Length:378661     
-##  Class :character   1st Qu.:     2.0   Class :character  
-##  Mode  :character   Median :    12.0   Mode  :character  
-##                     Mean   :   105.6                     
-##                     3rd Qu.:    56.0                     
-##                     Max.   :219382.0                     
-##                                                          
-##   usd pledged       usd_pledged_real   usd_goal_real      
-##  Min.   :       0   Min.   :       0   Min.   :        0  
-##  1st Qu.:      17   1st Qu.:      31   1st Qu.:     2000  
-##  Median :     395   Median :     624   Median :     5500  
-##  Mean   :    7037   Mean   :    9059   Mean   :    45454  
-##  3rd Qu.:    3034   3rd Qu.:    4050   3rd Qu.:    15500  
-##  Max.   :20338986   Max.   :20338986   Max.   :166361391  
-##  NA&#39;s   :3797</code></pre>
+##     backers            country        usd pledged       usd_pledged_real  
+##  Min.   :     0.0   US     :292627   Min.   :       0   Min.   :       0  
+##  1st Qu.:     2.0   GB     : 33672   1st Qu.:      17   1st Qu.:      31  
+##  Median :    12.0   CA     : 14756   Median :     395   Median :     625  
+##  Mean   :   106.6   AU     :  7839   Mean   :    7037   Mean   :    9124  
+##  3rd Qu.:    57.0   DE     :  4171   3rd Qu.:    3034   3rd Qu.:    4050  
+##  Max.   :219382.0   FR     :  2939   Max.   :20338986   Max.   :20338986  
+##                     (Other): 19095   NA&#39;s   :235                          
+##  usd_goal_real      
+##  Min.   :        0  
+##  1st Qu.:     2000  
+##  Median :     5500  
+##  Mean   :    45847  
+##  3rd Qu.:    16000  
+##  Max.   :166361391  
+## </code></pre>
+<pre class="r"><code>set.seed(124)
+ind &lt;- createDataPartition(data$state, p=0.8, list = FALSE)
+x_train &lt;- data[ind,-9]
+x_train_label &lt;- data[ind,9]
+x_test &lt;- data[-ind,9]
+x_test_label &lt;- data[-ind,9]
+#x_train_label &lt;- as.factor(x_train_label)
+#x_test_label &lt;- as.factor(x_test_label)</code></pre>
+<pre class="r"><code>&#39;
+# Normalize training data
+x_train &lt;- scale(x_train) 
+
+# Use means and standard deviations from training set to normalize test set
+col_means_train &lt;- attr(x_train, &quot;scaled:center&quot;) 
+col_stddevs_train &lt;- attr(x_train, &quot;scaled:scale&quot;)
+x_test &lt;- scale(x_test, center = col_means_train, scale = col_stddevs_train)
+&#39;</code></pre>
+<pre><code>## [1] &quot;\n# Normalize training data\nx_train &lt;- scale(x_train) \n\n# Use means and standard deviations from training set to normalize test set\ncol_means_train &lt;- attr(x_train, \&quot;scaled:center\&quot;) \ncol_stddevs_train &lt;- attr(x_train, \&quot;scaled:scale\&quot;)\nx_test &lt;- scale(x_test, center = col_means_train, scale = col_stddevs_train)\n&quot;</code></pre>
+<p>Now we define our model (using keras syntax):</p>
+<pre class="r"><code>network &lt;- keras_model_sequential() %&gt;% layer_dense(units = 12, activation = &quot;relu&quot;, input_shape = dim(x_train)[2]) %&gt;% layer_dense(units = 8, activation = &quot;relu&quot;) %&gt;% layer_dense(units = 8, activation = &quot;relu&quot;) %&gt;%layer_dense(units = 8, activation = &quot;relu&quot;) %&gt;%layer_dense(units = 8, activation = &quot;relu&quot;) %&gt;%layer_dense(units = 1, activation = &quot;sigmoid&quot;)</code></pre>
+<p>Now we need to compile our model, determining our optimizer (e.g., gradient descent), our loss function (e.g., sum of squared error) and the metric by which to measure our performance (e.g., accuracy)</p>
+<pre class="r"><code>network %&gt;% compile(loss = &quot;binary_crossentropy&quot;, optimizer = optimizer_adam(lr = 0.0001), metrics = c(&quot;binary_accuracy&quot;))</code></pre>
+<p>Now we fit the model:</p>
+<pre class="r"><code>&#39;
+x_train &lt;- as.matrix(x_train)
+x_train_label &lt;- as.matrix(x_train_label)
+network %&gt;% fit(x_train,x_train_label, epochs = 50, batch_size=5)
+&#39;</code></pre>
+<pre><code>## [1] &quot;\nx_train &lt;- as.matrix(x_train)\nx_train_label &lt;- as.matrix(x_train_label)\nnetwork %&gt;% fit(x_train,x_train_label, epochs = 50, batch_size=5)\n&quot;</code></pre>
 
 
 
