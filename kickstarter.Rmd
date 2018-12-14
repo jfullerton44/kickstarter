@@ -46,9 +46,20 @@ data$main_category <- as.factor(data$main_category)
 data$currency <- as.factor(data$currency)
 data$country <- as.factor(data$country)
 summary(data)
-View(data)
 
-data[which(data$pledged >= data$usd_goal_real)]
+data$timeActive <- difftime(data$deadline , data$launched , units = c("days"))
+data$timeActive <- as.numeric(data$timeActive)
+
+data$binnedBackers <- ifelse(data$backers <= 20, 1,
+                             ifelse((data$backers > 20) & (data$backers <= 100),2, 
+                                    ifelse((data$backers > 100) & (data$backers <= 1000),3,4)))
+
+data <- data %>% filter(timeActive < 365) ## found observations with really long active times
+week <- data$timeActive <= 7
+
+data$timeActiveBinned <- ifelse(data$timeActive <= 7, 1,
+                             ifelse((data$backers > 7) & (data$backers <= 31),2, 
+                                    ifelse((data$backers > 31) & (data$backers <= 62),3,4)))
 ```
 
 
@@ -248,6 +259,6 @@ From the tuning it was found that the best results was with an mtry of 6, and wh
 cv_opts <- trainControl(method="cv", number=5)
 Grid <- expand.grid(maxdepth=c(3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
 results_ada <- train(state~., data=train, method="ada",
-                    trControl=cv_opts,tuneGrid=Grid)
+                     trControl=cv_opts,tuneGrid=Grid)
 ```
 
