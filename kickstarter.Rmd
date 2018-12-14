@@ -240,7 +240,7 @@ tables$prop.tbl[1] + tables$prop.tbl[4]
 Also about 85% accuracy which is fairly good, however lets see if we can get a better accuracy by tuning our hyper parameters
 
 ```{r Tuning RF, eval=FALSE}
-cv_opts <- trainControl(method="cv", number=10)
+cv_opts <- trainControl(method="cv", number=5)
 Grid <- expand.grid(mtry = seq(1,10)) 
 results_rf <- train(train[,-c(2,7,9)], train$state  ,data=train, method="rf", 
                     trControl=cv_opts, # Cv opts is for tuning hyperparameteres
@@ -248,7 +248,7 @@ results_rf <- train(train[,-c(2,7,9)], train$state  ,data=train, method="rf",
 pred <- predict(results_rf, test)
 tables <- CrossTable(test$state, pred,
                      prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
-                     dnn = c('actual survived', 'predicted survived'))
+                     dnn = c('actual successful', 'predicted sucessfull'))
 tables$prop.tbl[1] + tables$prop.tbl[4]
 
 ```
@@ -261,4 +261,11 @@ Grid <- expand.grid(maxdepth=c(3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
 results_ada <- train(state~., data=train, method="ada",
                      trControl=cv_opts,tuneGrid=Grid)
 ```
+### Extreme Gradient Boosting Model
+```{r Extreme Gradient Boosting}
 
+```
+### Basic Decision Tree
+```{r Basic Decision Tree}
+
+```
