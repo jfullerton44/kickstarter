@@ -21,6 +21,7 @@ library(tidyverse)
 library(readr)
 library(caret)
 library(keras)
+library(vtreat)
 library(randomForest)
 library(gmodels)
 library(doSNOW)
@@ -38,7 +39,7 @@ data <- data %>% mutate(state=ifelse(state == 'live', 'successful', state))
 data <- data %>% mutate(state=ifelse(state == 'suspended', 'failed', state))
 data <- data %>% filter(state!='undefined')
 #NHIS <- NHIS %>% mutate(SEX=ifelse(as.factor(SEX) == 1, 'MALE', 'FEMALE'))
-data <- data[2:15]
+data <- data[1:15]
 data$state <- as.factor(data$state)
 data$category <- as.factor(data$category)
 data$main_category <- as.factor(data$main_category)
@@ -50,12 +51,50 @@ summary(data)
 
 
 ```{r}
+outcome <- 'state'
+target <- 2
+tooDetailed <- c("name")
+vars <- setdiff(colnames(data), c(outcome, tooDetailed))
+dTrain <- data
+
+
+```
+
+
+
+
+
+```{r}
+set.seed(4623762)
+tplan <- vtreat::designTreatmentsZ(dTrain, vars, 
+                                   minFraction= 0,
+                                   verbose=FALSE)
+# restrict to common varaibles types
+# see vignette('vtreatVariableTypes', package = 'vtreat') for details
+sf <- tplan$scoreFrame
+newvars <- sf$varName[sf$code %in% c("lev", "clean", "isBAD")] 
+trainVtreat <- as.matrix(vtreat::prepare(tplan, dTrain, 
+                                         varRestriction = newvars))
+print(dim(trainVtreat))
+
+```
+```{r}
+output <- as.data.frame(trainVtreat)
+data <- output
+
+```
+
+```{r}
 set.seed(124)
-ind <- createDataPartition(data$state, p=0.8, list = FALSE)
-x_train <- data[ind,-9]
-x_train_label <- data[ind,9]
-x_test <- data[-ind,9]
-x_test_label <- data[-ind,9]
+ind <- createDataPartition(data$state_lev_x_successful_clean, p=0.8, list = FALSE)
+x_train <- data[ind,-199]
+x_train_label <- data[ind,199]
+x_train_label <- as.data.frame(x_train_label)
+x_test <- data[-ind,199]
+x_test <- as.data.frame(x_test)
+x_test_label <- data[-ind,199]
+x_test_label <- as.data.frame(x_test_label)
+
 #x_train_label <- as.factor(x_train_label)
 #x_test_label <- as.factor(x_test_label)
 
@@ -63,8 +102,9 @@ x_test_label <- data[-ind,9]
 
 
 
+
 ```{r}
-'
+
 # Normalize training data
 x_train <- scale(x_train) 
 
@@ -72,31 +112,31 @@ x_train <- scale(x_train)
 col_means_train <- attr(x_train, "scaled:center") 
 col_stddevs_train <- attr(x_train, "scaled:scale")
 x_test <- scale(x_test, center = col_means_train, scale = col_stddevs_train)
-'
+
 ```
 
 Now we define our model (using keras syntax):
 
 ```{r}
-network <- keras_model_sequential() %>% layer_dense(units = 12, activation = "relu", input_shape = dim(x_train)[2]) %>% layer_dense(units = 8, activation = "relu") %>% layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 1, activation = "sigmoid")
+network <- keras_model_sequential() %>% layer_dense(units = 200, activation = "relu", input_shape = dim(x_train)[2]) %>% layer_dense(units = 100, activation = "relu") %>% layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 8, activation = "relu") %>%layer_dense(units = 1, activation = "sigmoid")
 
 ```
 
 Now we need to compile our model, determining our optimizer (e.g., gradient descent), our loss function (e.g., sum of squared error) and the metric by which to measure our performance (e.g., accuracy)
 
 ```{r}
-network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr = 0.0001), metrics = c("binary_accuracy"))
+network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr = 0.0005), metrics = c("binary_accuracy"))
 
 ```
 
 Now we fit the model:
 
 ```{r}
-'
+
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
-network %>% fit(x_train,x_train_label, epochs = 50, batch_size=5)
-'
+network %>% fit(x_train,x_train_label, epochs = 50)#, batch_size=10)
+
 ```
 
 
