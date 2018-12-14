@@ -39,51 +39,19 @@ data <- data %>% mutate(state=ifelse(state == 'live', 'successful', state))
 data <- data %>% mutate(state=ifelse(state == 'suspended', 'failed', state))
 data <- data %>% filter(state!='undefined')
 #NHIS <- NHIS %>% mutate(SEX=ifelse(as.factor(SEX) == 1, 'MALE', 'FEMALE'))
-data <- data[1:15]
+#data <- data[1:15]
 data$state <- as.factor(data$state)
 data$category <- as.factor(data$category)
 data$main_category <- as.factor(data$main_category)
 data$currency <- as.factor(data$currency)
 data$country <- as.factor(data$country)
 summary(data)
-View(data)
+#View(data)
 
-data[which(data$pledged >= data$usd_goal_real)]
+#data[which(data$pledged >= data$usd_goal_real)]
 ```
 
 
-
-```{r}
-outcome <- 'state'
-target <- 2
-tooDetailed <- c("name")
-vars <- setdiff(colnames(data), c(outcome, tooDetailed))
-dTrain <- data
-```
-
-
-
-
-
-```{r}
-set.seed(4623762)
-tplan <- vtreat::designTreatmentsZ(dTrain, vars, 
-                                   minFraction= 0,
-                                   verbose=FALSE)
-# restrict to common varaibles types
-# see vignette('vtreatVariableTypes', package = 'vtreat') for details
-sf <- tplan$scoreFrame
-newvars <- sf$varName[sf$code %in% c("lev", "clean", "isBAD")] 
-trainVtreat <- as.matrix(vtreat::prepare(tplan, dTrain, 
-                                         varRestriction = newvars))
-print(dim(trainVtreat))
-
-```
-```{r}
-output <- as.data.frame(trainVtreat)
-data <- output
-
-```
 
 ```{r}
 outcome <- 'state'
@@ -176,7 +144,7 @@ Now we fit the model:
 
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
-network %>% fit(x_train,x_train_label, epochs = 10)#, batch_size=10)
+network %>% fit(x_train,x_train_label, epochs = 1)#, batch_size=10)
 
 ```
 
