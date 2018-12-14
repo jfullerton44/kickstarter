@@ -146,7 +146,7 @@ tables$prop.tbl[1] + tables$prop.tbl[4]
 ```
 Also about 85% accuracy which is fairly good, however lets see if we can get a better accuracy by tuning our hyper parameters
 
-```{r}
+```{r Tuning RF, eval=FALSE}
 cv_opts <- trainControl(method="cv", number=10)
 Grid <- expand.grid(mtry = seq(1,10)) 
 results_rf <- train(train[,-c(2,7,9)], train$state  ,data=train, method="rf", 
@@ -162,7 +162,7 @@ tables$prop.tbl[1] + tables$prop.tbl[4]
 From the tuning it was found that the best results was with an mtry of 6, and when we run that model on the test data we get an accuracy of about .995825. Which is really good. However the computational time it took to make this model was extensive. Let's see if we can get similar performance on an adaptive boosting model, which could cut down on the computational efforts
 
 ### Adaptive Boosting Model
-```{r}
+```{r Tune Boosting, eval=FALSE}
 cv_opts <- trainControl(method="cv", number=5)
 Grid <- expand.grid(maxdepth=c(1,2,3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
 results_ada <- train(state~., data=train, method="ada",
