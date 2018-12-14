@@ -46,9 +46,44 @@ data$main_category <- as.factor(data$main_category)
 data$currency <- as.factor(data$currency)
 data$country <- as.factor(data$country)
 summary(data)
+View(data)
+
+data[which(data$pledged >= data$usd_goal_real)]
 ```
 
 
+
+```{r}
+outcome <- 'state'
+target <- 2
+tooDetailed <- c("name")
+vars <- setdiff(colnames(data), c(outcome, tooDetailed))
+dTrain <- data
+```
+
+
+
+
+
+```{r}
+set.seed(4623762)
+tplan <- vtreat::designTreatmentsZ(dTrain, vars, 
+                                   minFraction= 0,
+                                   verbose=FALSE)
+# restrict to common varaibles types
+# see vignette('vtreatVariableTypes', package = 'vtreat') for details
+sf <- tplan$scoreFrame
+newvars <- sf$varName[sf$code %in% c("lev", "clean", "isBAD")] 
+trainVtreat <- as.matrix(vtreat::prepare(tplan, dTrain, 
+                                         varRestriction = newvars))
+print(dim(trainVtreat))
+
+```
+```{r}
+output <- as.data.frame(trainVtreat)
+data <- output
+
+```
 
 ```{r}
 outcome <- 'state'
@@ -130,11 +165,12 @@ network <- keras_model_sequential() %>% layer_dense(units = 200, activation = "r
 Now we need to compile our model, determining our optimizer (e.g., gradient descent), our loss function (e.g., sum of squared error) and the metric by which to measure our performance (e.g., accuracy)
 
 ```{r}
-network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr = 0.0001), metrics = c("binary_accuracy"))
+network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr = 0.0005), metrics = c("binary_accuracy"))
 
 ```
 
 Now we fit the model:
+
 
 ```{r Run Neural Net}
 
@@ -148,8 +184,9 @@ network %>% fit(x_train,x_train_label, epochs = 10)#, batch_size=10)
 ### Random Forest Model
 ```{r Random Forest Basic}
 set.seed(1234)
-train <- data[ind,-c(1,2)]
-test <- data[-ind,-c(1,2)]
+ind <- createDataPartition(data$state, p =.8, list = FALSE)
+train <- data[ind,-c(1,2,3)]
+test <- data[-ind,-c(1,2,3)]
 train <- na.omit(train)
 test <- na.omit(test)
 str(train)
@@ -209,7 +246,7 @@ From the tuning it was found that the best results was with an mtry of 6, and wh
 ### Adaptive Boosting Model
 ```{r Tune Boosting, eval=FALSE}
 cv_opts <- trainControl(method="cv", number=5)
-Grid <- expand.grid(maxdepth=c(1,2,3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
+Grid <- expand.grid(maxdepth=c(3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
 results_ada <- train(state~., data=train, method="ada",
                     trControl=cv_opts,tuneGrid=Grid)
 ```
