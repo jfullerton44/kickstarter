@@ -86,14 +86,53 @@ data <- output
 ```
 
 ```{r}
+outcome <- 'state'
+target <- 2
+tooDetailed <- c("name")
+vars <- setdiff(colnames(data), c(tooDetailed))
+dTrain <- data
+
+
+```
+
+
+
+
+
+```{r}
+set.seed(4623762)
+tplan <- vtreat::designTreatmentsZ(dTrain, vars, 
+                                   minFraction= 0,
+                                   verbose=FALSE)
+# restrict to common varaibles types
+# see vignette('vtreatVariableTypes', package = 'vtreat') for details
+sf <- tplan$scoreFrame
+newvars <- sf$varName[sf$code %in% c("lev", "clean", "isBAD")] 
+trainVtreat <- as.matrix(vtreat::prepare(tplan, dTrain, 
+                                         varRestriction = newvars))
+print(dim(trainVtreat))
+
+```
+
+
+```{r}
+output <- as.data.frame(trainVtreat)
+dataNew <- output
+print(colnames(dataNew))
+
+```
+
+```{r}
 set.seed(124)
-ind <- createDataPartition(data$state_lev_x_successful_clean, p=0.8, list = FALSE)
-x_train <- data[ind,-199]
-x_train_label <- data[ind,199]
+ind <- createDataPartition(dataNew$state_lev_x_successful, p=0.8, list = FALSE)
+dataNew <- dataNew[-199]
+print(colnames(dataNew))
+x_train <- dataNew[ind,-199]
+x_train_label <- dataNew[ind,199]
 x_train_label <- as.data.frame(x_train_label)
-x_test <- data[-ind,199]
+x_test <- dataNew[-ind,199]
 x_test <- as.data.frame(x_test)
-x_test_label <- data[-ind,199]
+x_test_label <- dataNew[-ind,199]
 x_test_label <- as.data.frame(x_test_label)
 
 #x_train_label <- as.factor(x_train_label)
@@ -112,7 +151,7 @@ x_train <- scale(x_train)
 # Use means and standard deviations from training set to normalize test set
 col_means_train <- attr(x_train, "scaled:center") 
 col_stddevs_train <- attr(x_train, "scaled:scale")
-x_test <- scale(x_test, center = col_means_train, scale = col_stddevs_train)
+x_test <- scale(x_test)
 
 ```
 
@@ -132,17 +171,18 @@ network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr 
 
 Now we fit the model:
 
-```{r}
+
+```{r Run Neural Net}
 
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
-network %>% fit(x_train,x_train_label, epochs = 50)#, batch_size=10)
+network %>% fit(x_train,x_train_label, epochs = 10)#, batch_size=10)
 
 ```
 
 
 ### Random Forest Model
-```{r}
+```{r Random Forest Basic}
 set.seed(1234)
 ind <- createDataPartition(data$state, p =.8, list = FALSE)
 train <- data[ind,-c(1,2,3)]
@@ -163,7 +203,7 @@ tables$prop.tbl[1] + tables$prop.tbl[4]
 varImpPlot(randomForest_model) 
 ```
 From the variable importance plot it appears as though we should remove currency and country from the model
-```{r}
+```{r Random Forest Tuned}
 str(train)
 randomForest_model <- randomForest(train[,-c(2,7,9)],
                                    train$state, 
