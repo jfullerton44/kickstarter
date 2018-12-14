@@ -39,7 +39,7 @@ data <- data %>% mutate(state=ifelse(state == 'live', 'successful', state))
 data <- data %>% mutate(state=ifelse(state == 'suspended', 'failed', state))
 data <- data %>% filter(state!='undefined')
 #NHIS <- NHIS %>% mutate(SEX=ifelse(as.factor(SEX) == 1, 'MALE', 'FEMALE'))
-data <- data[1:15]
+#data <- data[1:15]
 data$state <- as.factor(data$state)
 data$category <- as.factor(data$category)
 data$main_category <- as.factor(data$main_category)
@@ -63,38 +63,6 @@ data$timeActiveBinned <- ifelse(data$timeActive <= 7, 1,
 ```
 
 
-
-```{r}
-outcome <- 'state'
-target <- 2
-tooDetailed <- c("name")
-vars <- setdiff(colnames(data), c(outcome, tooDetailed))
-dTrain <- data
-```
-
-
-
-
-
-```{r}
-set.seed(4623762)
-tplan <- vtreat::designTreatmentsZ(dTrain, vars, 
-                                   minFraction= 0,
-                                   verbose=FALSE)
-# restrict to common varaibles types
-# see vignette('vtreatVariableTypes', package = 'vtreat') for details
-sf <- tplan$scoreFrame
-newvars <- sf$varName[sf$code %in% c("lev", "clean", "isBAD")] 
-trainVtreat <- as.matrix(vtreat::prepare(tplan, dTrain, 
-                                         varRestriction = newvars))
-print(dim(trainVtreat))
-
-```
-```{r}
-output <- as.data.frame(trainVtreat)
-data <- output
-
-```
 
 ```{r}
 outcome <- 'state'
@@ -129,7 +97,7 @@ print(dim(trainVtreat))
 ```{r}
 output <- as.data.frame(trainVtreat)
 dataNew <- output
-print(colnames(dataNew))
+#print(colnames(dataNew))
 
 ```
 
@@ -137,11 +105,11 @@ print(colnames(dataNew))
 set.seed(124)
 ind <- createDataPartition(dataNew$state_lev_x_successful, p=0.8, list = FALSE)
 dataNew <- dataNew[-199]
-print(colnames(dataNew))
+#print(colnames(dataNew))
 x_train <- dataNew[ind,-199]
 x_train_label <- dataNew[ind,199]
 x_train_label <- as.data.frame(x_train_label)
-x_test <- dataNew[-ind,199]
+x_test <- dataNew[-ind,-199]
 x_test <- as.data.frame(x_test)
 x_test_label <- dataNew[-ind,199]
 x_test_label <- as.data.frame(x_test_label)
@@ -183,7 +151,7 @@ network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr 
 Now we fit the model:
 
 
-```{r Run Neural Net}
+```{r Run Neural Net, echo=TRUE}
 
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
@@ -191,6 +159,12 @@ network %>% fit(x_train,x_train_label, epochs = 10)#, batch_size=10)
 
 ```
 
+```{r}
+x_test <- as.matrix(x_test)
+x_test_label <- as.matrix(x_test_label)
+metrics <- network %>% evaluate(x_test,x_test_label)
+metrics
+```
 
 ### Random Forest Model
 ```{r Random Forest Basic}
