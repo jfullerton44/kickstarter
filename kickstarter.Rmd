@@ -21,6 +21,11 @@ library(tidyverse)
 library(readr)
 library(caret)
 library(keras)
+library(randomForest)
+library(gmodels)
+library(doSNOW)
+registerDoSNOW(makeCluster(2, type = "SOCK"))
+library(ada)
 ```
 
 
@@ -93,3 +98,74 @@ x_train_label <- as.matrix(x_train_label)
 network %>% fit(x_train,x_train_label, epochs = 50, batch_size=5)
 '
 ```
+
+
+### Random Forest Model
+```{r}
+set.seed(1234)
+train <- data[ind,-c(1,2)]
+test <- data[-ind,-c(1,2)]
+train <- na.omit(train)
+test <- na.omit(test)
+str(train)
+randomForest_model <- randomForest(train[,-7],
+                                   train$state, 
+                                   sampsize = round(0.6*(length(train))), ## the number of sample size
+                                   ntree = 2000, ## How many trees to use
+                                   mtry = sqrt(9),
+                                   importance = TRUE) ## Good for feature selection
+tables <- CrossTable(train$state, randomForest_model$predicted,
+                     prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                     dnn = c('actual survived', 'predicted survived'))
+tables$prop.tbl[1] + tables$prop.tbl[4]
+varImpPlot(randomForest_model) 
+```
+From the variable importance plot it appears as though we should remove currency and country from the model
+```{r}
+str(train)
+randomForest_model <- randomForest(train[,-c(2,7,9)],
+                                   train$state, 
+                                   sampsize = round(0.6*(length(train))), ## the number of sample size
+                                   ntree = 2000, ## How many trees to use
+                                   mtry = sqrt(9),
+                                   importance = TRUE) ## Good for feature selection
+tables <- CrossTable(train$state, randomForest_model$predicted,
+                     prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                     dnn = c('actual survived', 'predicted survived'))
+tables$prop.tbl[1] + tables$prop.tbl[4]
+varImpPlot(randomForest_model) 
+```
+With this model we get an accuracy of about .85, which isn't too bad, lets see how it performs on the test data
+
+```{r}
+pred <- predict(randomForest_model, test)
+tables <- CrossTable(test$state, pred,
+                     prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                     dnn = c('actual survived', 'predicted survived'))
+tables$prop.tbl[1] + tables$prop.tbl[4]
+```
+Also about 85% accuracy which is fairly good, however lets see if we can get a better accuracy by tuning our hyper parameters
+
+```{r}
+cv_opts <- trainControl(method="cv", number=10)
+Grid <- expand.grid(mtry = seq(1,10)) 
+results_rf <- train(train[,-c(2,7,9)], train$state  ,data=train, method="rf", 
+                    trControl=cv_opts, # Cv opts is for tuning hyperparameteres
+                    tuneGrid=Grid)
+pred <- predict(results_rf, test)
+tables <- CrossTable(test$state, pred,
+                     prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                     dnn = c('actual survived', 'predicted survived'))
+tables$prop.tbl[1] + tables$prop.tbl[4]
+
+```
+From the tuning it was found that the best results was with an mtry of 6, and when we run that model on the test data we get an accuracy of about .995825. Which is really good. However the computational time it took to make this model was extensive. Let's see if we can get similar performance on an adaptive boosting model, which could cut down on the computational efforts
+
+### Adaptive Boosting Model
+```{r}
+cv_opts <- trainControl(method="cv", number=5)
+Grid <- expand.grid(maxdepth=c(1,2,3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
+results_ada <- train(state~., data=train, method="ada",
+                    trControl=cv_opts,tuneGrid=Grid)
+```
+
