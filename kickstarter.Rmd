@@ -86,7 +86,7 @@ print(dim(trainVtreat))
 ```{r}
 output <- as.data.frame(trainVtreat)
 dataNew <- output
-print(colnames(dataNew))
+#print(colnames(dataNew))
 
 ```
 
@@ -94,7 +94,7 @@ print(colnames(dataNew))
 set.seed(124)
 ind <- createDataPartition(dataNew$state_lev_x_successful, p=0.8, list = FALSE)
 dataNew <- dataNew[-199]
-print(colnames(dataNew))
+#print(colnames(dataNew))
 x_train <- dataNew[ind,-199]
 x_train_label <- dataNew[ind,199]
 x_train_label <- as.data.frame(x_train_label)
@@ -140,11 +140,11 @@ network %>% compile(loss = "binary_crossentropy", optimizer = optimizer_adam(lr 
 Now we fit the model:
 
 
-```{r Run Neural Net}
+```{r Run Neural Net, echo=TRUE}
 
 x_train <- as.matrix(x_train)
 x_train_label <- as.matrix(x_train_label)
-network %>% fit(x_train,x_train_label, epochs = 1)#, batch_size=10)
+network %>% fit(x_train,x_train_label, epochs = 10)#, batch_size=10)
 
 ```
 
