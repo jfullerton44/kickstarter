@@ -1,0 +1,75 @@
+---
+title: "Kickstarter Grpahs"
+author: "Blake Brown and Jacob Fullerton"
+date: "12/14/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r Library Packages, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r Import data}
+
+data <- read.csv("data.csv")
+
+data$state <- ifelse((data$state == 'canceled')|(data$state=='suspended')|(data$state=='failed'), 'failed', 
+                     ifelse((data$state == 'live')|(data$state == 'successful'), 'successful', NA))
+data<- na.omit(data)
+
+# data <- data %>% mutate(state=ifelse(state == 'canceled', 'failed', state))
+# data <- data %>% mutate(state=ifelse(state == 'live', 'successful', state))
+# data <- data %>% mutate(state=ifelse(state == 'suspended', 'failed', state))
+# data <- data %>% filter(state='undefined')
+
+data$state <- as.factor(data$state)
+data$category <- as.factor(data$category)
+data$main_category <- as.factor(data$main_category)
+data$currency <- as.factor(data$currency)
+data$country <- as.factor(data$country)
+summary(data)
+
+data$timeActive <- difftime(data$deadline , data$launched , units = c("days"))
+data$timeActive <- as.numeric(data$timeActive)
+
+data$binnedBackers <- ifelse(data$backers <= 20, 1,
+                             ifelse((data$backers > 20) & (data$backers <= 100),2, 
+                                    ifelse((data$backers > 100) & (data$backers <= 1000),3,4)))
+
+data <- data %>% filter(timeActive < 365) ## found observations with really long active times
+data$timeActiveBinned <- ifelse(data$timeActive <= 7, 1,
+                             ifelse((data$timeActive > 7) & (data$timeActive <= 31),2, 
+                                    ifelse((data$timeActive > 31) & (data$timeActive <= 62),3,4)))
+dataSmall <- filter(data, goal<100000)
+dataMed <- filter(data, goal < 1000000)
+
+str(data)
+```
+
+Box plot of goal amount by main_catagory
+Since there are so many outliers due to a number of very high budget projects, we decided to hide them in this plot so you can get a better look at the majoritt of the data
+```{r}
+ggplot(data = dataSmall, mapping = aes(x = main_category, y = goal))  + geom_boxplot(outlier.shape = NA)+ coord_flip()
+```
+
+
+When we look at the graph with the outliers included there is a very different picture. 
+```{r}
+ggplot(data = dataMed, mapping = aes(x = main_category, y = goal))  + geom_boxplot()+ coord_flip()
+```
+
+Since the catagory is one of the more important aspects of a project, we wanted to explore how the success rate varied by catagory.
+```{r}
+ggplot(data=data) + geom_bar(mapping = aes(x = main_category, fill = state))+ coord_flip()
+```
+
+
