@@ -75,6 +75,10 @@ We can see that most of the failed projects did not have a lot of backers, thus 
 ```{r}
 ggplot(data) + geom_bar(aes(x=binnedBackers, fill = state ), position = 'dodge') + ggtitle('Number of backers by State of Project') 
 ```
+```{r}
+ggplot(data) + geom_point(aes(x= backers, y = goal, col = state))
+```
+When when we look at thhe number of backers vs the goal amount we can see that most of the successful ones had a lot of backers but not a high goal amount and the failed projects had low amount of backers and a large goal amount.
 
 
 
