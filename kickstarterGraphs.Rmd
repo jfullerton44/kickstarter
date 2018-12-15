@@ -49,7 +49,27 @@ data <- data %>% filter(timeActive < 365) ## found observations with really long
 data$timeActiveBinned <- ifelse(data$timeActive <= 7, 1,
                              ifelse((data$timeActive > 7) & (data$timeActive <= 31),2, 
                                     ifelse((data$timeActive > 31) & (data$timeActive <= 62),3,4)))
+dataSmall <- filter(data, goal<100000)
+dataMed <- filter(data, goal < 1000000)
 
 str(data)
 ```
+
+Box plot of goal amount by main_catagory
+Since there are so many outliers due to a number of very high budget projects, we decided to hide them in this plot so you can get a better look at the majoritt of the data
+```{r}
+ggplot(data = dataSmall, mapping = aes(x = main_category, y = goal))  + geom_boxplot(outlier.shape = NA)+ coord_flip()
+```
+
+
+When we look at the graph with the outliers included there is a very different picture. 
+```{r}
+ggplot(data = dataMed, mapping = aes(x = main_category, y = goal))  + geom_boxplot()+ coord_flip()
+```
+
+Since the catagory is one of the more important aspects of a project, we wanted to explore how the success rate varied by catagory.
+```{r}
+ggplot(data=data) + geom_bar(mapping = aes(x = main_category, fill = state))+ coord_flip()
+```
+
 
