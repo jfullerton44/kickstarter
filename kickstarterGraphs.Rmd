@@ -71,5 +71,10 @@ Since the catagory is one of the more important aspects of a project, we wanted 
 ```{r}
 ggplot(data=data) + geom_bar(mapping = aes(x = main_category, fill = state))+ coord_flip()
 ```
+We can see that most of the failed projects did not have a lot of backers, thus more backers will come with a higher success rate
+```{r}
+ggplot(data) + geom_bar(aes(x=binnedBackers, fill = state ), position = 'dodge') + ggtitle('Number of backers by State of Project') 
+```
+
 
 
