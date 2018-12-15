@@ -24,9 +24,7 @@ library(keras)
 library(vtreat)
 library(randomForest)
 library(gmodels)
-library(doSNOW)
-registerDoSNOW(makeCluster(2, type = "SOCK"))
-library(ada)
+library(adabag)
 library(xgboost)
 library(Matrix)
 ```
@@ -233,17 +231,10 @@ tables$prop.tbl[1] + tables$prop.tbl[4]
 ```
 From the tuning it was found that the best results was with an mtry of 6, and when we run that model on the test data we get an accuracy of about .995825. Which is really good. However the computational time it took to make this model was extensive. Let's see if we can get similar performance on an adaptive boosting model, which could cut down on the computational efforts
 
-### Adaptive Boosting Model
-```{r Tune Boosting, eval=FALSE}
-cv_opts <- trainControl(method="cv", number=5)
-Grid <- expand.grid(maxdepth=c(3,4,5,6,7),nu=.01,iter=c(50,100,150,200))
-results_ada <- train(state~., data=train, method="ada",
-                     trControl=cv_opts,tuneGrid=Grid)
-```
 ### Extreme Gradient Boosting Model
-```{r Extreme Gradient Boosting}
+```{r Extreme Gradient Boosting, message=FALSE, warning=FALSE, output = FALSE}
 response <- data[,10]
-full_matrix <- sparse.model.matrix(~., data = data[-c(1,2,3,6,8,10)])
+full_matrix <- sparse.model.matrix(~., data = data[,-c(1,2,3,6,8,10)])
 sample <- sample.int(n = nrow(full_matrix), size = floor(.8*nrow(full_matrix)))
 training <- full_matrix[sample,]
 testing <- full_matrix[-sample,]
@@ -259,20 +250,6 @@ dtrain <- xgb.DMatrix(data = training, label = response_train)
 dtest <- xgb.DMatrix(data = testing, label =response_test)
 watchlist <- list(train = dtrain, test = dtest)
 
-# Grid <- expand.grid(
-#   nrounds = seq(10,1010, by =100),
-#   max_depth = seq(1,25,by = 5),
-#   colsample_bytree = seq(.5, .9, by = .1),
-#   eta = .1,
-#   gamma = 0,
-#   min_child_weight = 1,
-#   subsample = 1
-# )
-# results_xgb <- train(
-#   dtrain, y, trControl = cv_opts,
-#   tuneGrid = Grid,
-#   method = 'xgbTree'
-# )
 params <- list(booster = "gbtree", objective = "binary:logistic", eta=.1, gamma=1, max_depth=6, min_child_weight=1, subsample=.7, colsample_bytree=1)
 
 # xgb.fit <- xgb.cv(dtrain, nrounds = 1000, nfold = 5, params = params, verbose = 0, early_stopping_round = 10)
@@ -280,11 +257,13 @@ params <- list(booster = "gbtree", objective = "binary:logistic", eta=.1, gamma=
 
 xgb1 <- xgb.train(params = params, data = dtrain, nrounds = 247,
                    watchlist = watchlist, print_every_n = 1, early_stop_round = 5, maximize = F , eval_metric = "error")
+```
 
+```{r Predictions}
 xgbpred <- predict(xgb1,dtest)
 xgbpred <- ifelse(xgbpred < 0.5,1,0)
 table <- CrossTable(xgbpred, response_test,
                     prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
                     dnn = c('actual survival', 'predicted survival'))
-table$prop.tbl[2] + table$prop.tbl[3]
+table$prop.tbl[1] + table$prop.tbl[4]
 ```
