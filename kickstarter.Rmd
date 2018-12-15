@@ -258,7 +258,7 @@ params <- list(booster = "gbtree", objective = "binary:logistic", eta=.1, gamma=
 xgb1 <- xgb.train(params = params, data = dtrain, nrounds = 247,
                    watchlist = watchlist, print_every_n = 1, early_stop_round = 5, maximize = F , eval_metric = "error")
 ```
-
+Now that we have the model setup and the number of round has been tuned, lets use the model on the test set and see how it performs.
 ```{r Predictions}
 xgbpred <- predict(xgb1,dtest)
 xgbpred <- ifelse(xgbpred < 0.5,1,0)
@@ -267,3 +267,4 @@ table <- CrossTable(xgbpred, response_test,
                     dnn = c('actual survival', 'predicted survival'))
 table$prop.tbl[1] + table$prop.tbl[4]
 ```
+From the extreme gradient boosting model, we got an accuracy of about 99% therefore. Using this model is much less computationally expensive than the random forest model and still provides high accuracy. Therefore, this model may be the best model to go with given our data set. 
